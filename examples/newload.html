@@ -1,0 +1,193 @@
+<!-- START SIGMA IMPORTS -->
+<script src="../src/sigma.core.js"></script>
+<script src="../src/conrad.js"></script>
+<script src="../src/utils/sigma.utils.js"></script>
+<script src="../src/utils/sigma.polyfills.js"></script>
+<script src="../src/sigma.settings.js"></script>
+<script src="../src/classes/sigma.classes.dispatcher.js"></script>
+<script src="../src/classes/sigma.classes.configurable.js"></script>
+<script src="../src/classes/sigma.classes.graph.js"></script>
+<script src="../src/classes/sigma.classes.camera.js"></script>
+<script src="../src/classes/sigma.classes.quad.js"></script>
+<script src="../src/classes/sigma.classes.edgequad.js"></script>
+<script src="../src/captors/sigma.captors.mouse.js"></script>
+<script src="../src/captors/sigma.captors.touch.js"></script>
+<script src="../src/renderers/sigma.renderers.canvas.js"></script>
+<script src="../src/renderers/sigma.renderers.webgl.js"></script>
+<script src="../src/renderers/sigma.renderers.svg.js"></script>
+<script src="../src/renderers/sigma.renderers.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.nodes.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.nodes.fast.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.fast.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.labels.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.hovers.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.nodes.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.curve.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.curve.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.curvedArrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.extremities.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.utils.js"></script>
+<script src="../src/renderers/svg/sigma.svg.nodes.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.edges.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.edges.curve.js"></script>
+<script src="../src/renderers/svg/sigma.svg.labels.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.hovers.def.js"></script>
+<script src="../src/middlewares/sigma.middlewares.rescale.js"></script>
+<script src="../src/middlewares/sigma.middlewares.copy.js"></script>
+<script src="../src/misc/sigma.misc.animation.js"></script>
+<script src="../src/misc/sigma.misc.bindEvents.js"></script>
+<script src="../src/misc/sigma.misc.bindDOMEvents.js"></script>
+<script src="../src/misc/sigma.misc.drawHovers.js"></script>
+<!-- END SIGMA IMPORTS -->
+<script src="../plugins/sigma.parsers.json/sigma.parsers.json.js"></script>
+<script src="../plugins/sigma.layout.forceAtlas2.min.js"></script>
+<div id="container">
+  <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+  </style>
+  <div id="graph-container"></div>
+    <div id="graph-container2"></div>
+
+</div>
+<script>
+/**
+ * Here is just a basic example on how to properly display a graph
+ * exported from Gephi as a JSON file, with the JSON Exporter plugin from
+ * the Oxford Internet Institute:
+ *
+ *  > https://marketplace.gephi.org/plugin/json-exporter/
+ *
+ * The plugin sigma.parsers.json can load and parse the JSON graph file,
+ * and instantiate sigma when the graph is received.
+ *
+ * The object given as the second parameter is the base of the instance
+ * configuration object. The plugin will just add the "graph" key to it
+ * before the instanciation.
+ */
+var g = {
+            nodes: [],
+            edges: []
+        };
+
+var s = new sigma({
+    graph: g,
+    container: 'graph-container2',
+    renderer: {
+        container: document.getElementById('graph-container2'),
+        type: 'canvas'
+    },
+    settings: {
+        minNodeSize: 8,
+        maxNodeSize: 16
+    }
+});
+var  g2;
+var s2;
+var nodeData;
+var edgeData;
+
+sigma.parsers.json(
+        'data/arctic.json',
+        s,
+        function() {
+            // this is needed in case the original JSON doesn't have color / size / x-y attributes 
+            var i,
+                    nodes = s.graph.nodes(),
+                    lenN = nodes.length;
+                    nodeData = new Array(lenN);
+            console.log(nodes[0].x);
+            for (i = 0; i < lenN; i++) {
+              nodeData[i] = new Array(6);
+              nodeData[i][0] = nodes[i].id;
+              nodeData[i][1] = nodes[i].label;
+              nodeData[i][2] = nodes[i].x;
+              nodeData[i][3] = nodes[i].y;
+              nodeData[i][4] = s.graph.degree(nodes[i].id);
+              nodeData[i][5] = nodes[i].center ? '#333' : '#666';
+            }
+
+             var j,       
+                    edges = s.graph.edges(),
+                    lenE = edges.length;
+                    edgeData = new Array(lenE);   
+            
+             for(j = 0 ; j < lenE; j++){
+                edgeData[j] = new Array(2);
+                edgeData[j][0] = edges[j].source;
+                edgeData[j][1] = edges[j].target;
+                //edgeData[i][2] = edges[j].id;
+
+                //edges[j].id = "kuy";
+               // console.log(edges[j].source);
+             }        
+             //console.log(edges[0].id+"hello");
+            // Refresh the display:
+           // s.refresh();
+            // ForceAtlas Layout
+            //s.startForceAtlas2();
+            console.log(edgeData[0][0] +"hello");
+            createGraph(nodeData,edgeData,lenN,lenE);
+        } 
+);
+function createGraph(nodeData , edgeData ,lenN , lenE){
+var i,
+    N = lenN,
+    E = lenE,
+    g2 = {
+      nodes: [],
+      edges: []
+    };
+ console.log(lenN);
+  console.log(lenE);
+// Generate a random graph:
+for (i = 0; i < N; i++)
+  g2.nodes.push({
+    id: 'n' + nodeData[i][0] ,
+    label: 'Node ' + nodeData[i][1] ,
+    x: Math.random(),
+    y: Math.random(),
+    size: Math.random(),
+    color: '#666'
+  });
+
+for (i = 0; i < E; i++){
+  g2.edges.push({
+    id: 'e' + i,
+    label: 'Edge ' + i,
+    source: 'n' + (edgeData[i][0]),
+    target: 'n' + (edgeData[i][1]),
+    size: Math.random(),
+    color: '#ccc',
+    type: ['line', 'curve', 'arrow', 'curvedArrow'][Math.random() * 4 | 0]
+  });
+  console.log(g2.edges[i].source);
+}
+
+s2 = new sigma({
+  graph: g2,
+  renderer: {
+    container: document.getElementById('graph-container'),
+    type: 'canvas'
+  },
+    settings: {
+      edgeLabelSize: 'proportional'
+  }
+}); 
+         
+}
+
+</script>
+

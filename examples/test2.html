@@ -1,0 +1,147 @@
+<!-- START SIGMA IMPORTS -->
+<script src="../src/sigma.core.js"></script>
+<script src="../src/conrad.js"></script>
+<script src="../src/utils/sigma.utils.js"></script>
+<script src="../src/utils/sigma.polyfills.js"></script>
+<script src="../src/sigma.settings.js"></script>
+<script src="../src/classes/sigma.classes.dispatcher.js"></script>
+<script src="../src/classes/sigma.classes.configurable.js"></script>
+<script src="../src/classes/sigma.classes.graph.js"></script>
+<script src="../src/classes/sigma.classes.camera.js"></script>
+<script src="../src/classes/sigma.classes.quad.js"></script>
+<script src="../src/classes/sigma.classes.edgequad.js"></script>
+<script src="../src/captors/sigma.captors.mouse.js"></script>
+<script src="../src/captors/sigma.captors.touch.js"></script>
+<script src="../src/renderers/sigma.renderers.canvas.js"></script>
+<script src="../src/renderers/sigma.renderers.webgl.js"></script>
+<script src="../src/renderers/sigma.renderers.svg.js"></script>
+<script src="../src/renderers/sigma.renderers.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.nodes.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.nodes.fast.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.def.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.fast.js"></script>
+<script src="../src/renderers/webgl/sigma.webgl.edges.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.labels.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.hovers.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.nodes.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.curve.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.def.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.curve.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.arrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.edgehovers.curvedArrow.js"></script>
+<script src="../src/renderers/canvas/sigma.canvas.extremities.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.utils.js"></script>
+<script src="../src/renderers/svg/sigma.svg.nodes.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.edges.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.edges.curve.js"></script>
+<script src="../src/renderers/svg/sigma.svg.labels.def.js"></script>
+<script src="../src/renderers/svg/sigma.svg.hovers.def.js"></script>
+<script src="../src/middlewares/sigma.middlewares.rescale.js"></script>
+<script src="../src/middlewares/sigma.middlewares.copy.js"></script>
+<script src="../src/misc/sigma.misc.animation.js"></script>
+<script src="../src/misc/sigma.misc.bindEvents.js"></script>
+<script src="../src/misc/sigma.misc.bindDOMEvents.js"></script>
+<script src="../src/misc/sigma.misc.drawHovers.js"></script>
+<!-- END SIGMA IMPORTS -->
+<script src="../plugins/sigma.parsers.json/sigma.parsers.json.js"></script>
+<script src="../plugins/sigma.layout.forceAtlas2.min.js"></script>
+  <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+  </style>
+  <div id="graph-container"></div>
+</div>
+<script>
+/**
+ * Here is just a basic example on how to properly display a graph
+ * exported from Gephi as a JSON file, with the JSON Exporter plugin from
+ * the Oxford Internet Institute:
+ *
+ *  > https://marketplace.gephi.org/plugin/json-exporter/
+ *
+ * The plugin sigma.parsers.json can load and parse the JSON graph file,
+ * and instantiate sigma when the graph is received.
+ *
+ * The object given as the second parameter is the base of the instance
+ * configuration object. The plugin will just add the "graph" key to it
+ * before the instanciation.
+ */
+function init() {
+  // Instanciate sigma.js and customize it :
+  var sigInst = sigma.init(document.getElementById('sigma-example')).drawingProperties({
+    defaultLabelColor: '#fff'
+  });
+ 
+  // Generate a random graph with :
+  //   . N nodes
+  //   . E edges
+  //   . C clusters
+  //   . d the proportion of edges that connect two nodes
+  //     from the same cluster
+  var i, N = 500, E = 3000, C = 5, d = 0.5, clusters = [];
+  for(i = 0; i < C; i++){
+    clusters.push({
+      'id': i,
+      'nodes': [],
+      'color': 'rgb('+Math.round(Math.random()*256)+','+
+                      Math.round(Math.random()*256)+','+
+                      Math.round(Math.random()*256)+')'
+    });
+  }
+ 
+  for(i = 0; i < N; i++){
+    var cluster = clusters[(Math.random()*C)|0];
+    sigInst.addNode('n'+i,{
+      'x': Math.random(),
+      'y': Math.random(),
+      'size': 0.5+4.5*Math.random(),
+      'color': cluster['color'],
+      'cluster': cluster['id']
+    });
+    cluster.nodes.push('n'+i);
+  }
+ 
+  for(i = 0; i < E; i++){
+    if(Math.random() < 1-d){
+      sigInst.addEdge(i,'n'+(Math.random()*N|0),'n'+(Math.random()*N|0));
+    }else{
+      var cluster = clusters[(Math.random()*C)|0], n = cluster.nodes.length;
+      sigInst.addEdge(i,cluster.nodes[Math.random()*n|0],cluster.nodes[Math.random()*n|0]);
+    }
+  }
+ 
+  // Start the ForceAtlas2 algorithm
+  // (requires "sigma.forceatlas2.js" to be included)
+  sigInst.startForceAtlas2();
+ 
+  var isRunning = true;
+  document.getElementById('stop-layout').addEventListener('click',function(){
+    if(isRunning){
+      isRunning = false;
+      sigInst.stopForceAtlas2();
+      document.getElementById('stop-layout').childNodes[0].nodeValue = 'Start Layout';
+    }else{
+      isRunning = true;
+      sigInst.startForceAtlas2();
+      document.getElementById('stop-layout').childNodes[0].nodeValue = 'Stop Layout';
+    }
+  },true);
+  document.getElementById('rescale-graph').addEventListener('click',function(){
+    sigInst.position(0,0,1).draw();
+  },true);
+}
+ 
+if (document.addEventListener) {
+  document.addEventListener('DOMContentLoaded', init, false);
+} else {
+  window.onload = init;
+}
+</script>
